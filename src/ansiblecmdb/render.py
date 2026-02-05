@@ -1,18 +1,11 @@
 import os
-import imp
+
+# import imp
 from mako.template import Template
 from mako.lookup import TemplateLookup
 
 
 class Render:
-    """
-    Wrapper class to facilitate rendering.
-
-    This is mostly a helper class for finding template locations and
-    initializing Mako properly. It can also call executable "templates" (python
-    scripts) for rendering.
-
-    """
     def __init__(self, tpl, tpl_dirs):
         self.tpl = tpl
         self.tpl_dirs = tpl_dirs
@@ -23,9 +16,7 @@ class Render:
         """
         Construct a list of possible paths to templates.
         """
-        tpl_possibilities = [
-            os.path.realpath(self.tpl)
-        ]
+        tpl_possibilities = [os.path.realpath(self.tpl)]
         for tpl_dir in self.tpl_dirs:
             tpl_possibilities.append(os.path.realpath(os.path.join(tpl_dir, "{0}.tpl".format(self.tpl))))
             tpl_possibilities.append(os.path.realpath(os.path.join(tpl_dir, "{0}.py".format(self.tpl))))
@@ -54,18 +45,12 @@ class Render:
             raise ValueError("Don't know how to handle '{0}'".format(self.tpl_file))
 
     def _render_mako(self, hosts, vars={}):
-        lookup = TemplateLookup(directories=self.tpl_dirs,
-                                default_filters=['decode.utf8'],
-                                input_encoding='utf-8',
-                                output_encoding='utf-8',
-                                encoding_errors='replace')
-        template = Template(filename=self.tpl_file,
-                            lookup=lookup,
-                            default_filters=['decode.utf8'],
-                            input_encoding='utf-8',
-                            output_encoding='utf-8')
+        lookup = TemplateLookup(directories=self.tpl_dirs, default_filters=["decode.utf8"], input_encoding="utf-8", output_encoding="utf-8", encoding_errors="replace")
+        template = Template(filename=self.tpl_file, lookup=lookup, default_filters=["decode.utf8"], input_encoding="utf-8", output_encoding="utf-8")
         return template.render(hosts=hosts, **vars)
 
     def _render_py(self, hosts, vars={}):
-        module = imp.load_source('r', self.tpl_file)
+        # module = imp.load_source('r', self.tpl_file) to be converted
+        module = __import__(os.path.splitext(os.path.basename(self.tpl_file))[0])
+
         return module.render(hosts, vars=vars, tpl_dirs=self.tpl_dirs)
